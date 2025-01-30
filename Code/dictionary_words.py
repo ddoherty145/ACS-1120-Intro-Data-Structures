@@ -3,7 +3,6 @@ import sys
 import subprocess
 
 def read_words_file(file_path):
-    """Reads a file containing words and returns a list of words."""
     try:
         with open(file_path, 'r') as file:
             words = file.read().splitlines()
@@ -13,7 +12,6 @@ def read_words_file(file_path):
         sys.exit(1)
 
 def count_words_in_file(file_path):
-    """Counts the number of lines in a file using the wc command."""
     try:
         result = subprocess.run(['wc', '-l', file_path], stdout=subprocess.PIPE, text=True)
         return int(result.stdout.split()[0])
@@ -22,14 +20,12 @@ def count_words_in_file(file_path):
         sys.exit(1)
 
 def generate_sentence(words, num_words):
-    """Generates a random sentence with the requested number of words."""
     if num_words > len(words):
         print("Error: Requested number of words exceeds the number of available words.")
         sys.exit(1)
     return " ".join(random.sample(words, num_words))
 
 def main():
-    """Main function to handle user input and generate a sentence."""
     if len(sys.argv) != 2:
         print("Usage: python3 dictionary_words.py <number_of_words>")
         sys.exit(1)
