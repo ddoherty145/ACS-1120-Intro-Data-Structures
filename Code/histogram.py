@@ -1,5 +1,6 @@
 import sys
 import string
+import random
 from collections import Counter
 
 def histogram(source_text):
@@ -17,6 +18,16 @@ def histogram(source_text):
     words = text.split()
     return Counter(words)
 
+def random_word(histogram):
+    """Select a single word at random from the histogram (uniform distribution)"""
+    return random.choice(list(histogram.keys()))
+
+def random_words_weighted(histogram):
+    """Select a single word at random, weighted by frequency"""
+    words = list(histogram.keys())
+    weights = list(histogram.values())  # Fixed `.value()` to `.values()`
+    return random.choices(words, weights=weights, k=1)[0]  # Use `random.choices()`
+
 def unique_words(histogram):
     """Returns the number of unique words in the histogram"""
     return len(histogram)
@@ -26,13 +37,12 @@ def frequency(word, histogram):
     return histogram.get(word.lower(), 0)
 
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: python3 histogram.py <text_file> <word1> <word2> ...")
+    if len(sys.argv) < 2:
+        print("Usage: python3 histogram.py <text_file>")
         sys.exit(1)
 
     text_file = sys.argv[1]
-    words_to_check = sys.argv[2:]  # Allow checking multiple words
-
+    
     # Generate Histogram
     word_histogram = histogram(text_file)
 
@@ -41,10 +51,11 @@ def main():
 
     print(f"Total Unique Words: {unique_count}")
 
-    # Check frequency for each word provided
-    for word in words_to_check:
-        word_freq = frequency(word, word_histogram)
-        print(f"Frequency of '{word}': {word_freq}")
+    # Print a random word (uniform)
+    print("Random Word (Uniform):", random_word(word_histogram))
+
+    # Print a random word (weighted)
+    print("Random Word (Weighted by frequency):", random_words_weighted(word_histogram))
 
 if __name__ == "__main__":
     main()
