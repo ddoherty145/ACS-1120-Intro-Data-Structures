@@ -20,13 +20,19 @@ def histogram(source_text):
 
 def random_word(histogram):
     """Select a single word at random from the histogram (uniform distribution)"""
-    return random.choice(list(histogram.keys()))
+    words = list(histogram.keys())
+    index = random.randint(0, len(words) - 1)
+    return words[index]
 
 def random_words_weighted(histogram):
     """Select a single word at random, weighted by frequency"""
-    words = list(histogram.keys())
-    weights = list(histogram.values())  # Fixed `.value()` to `.values()`
-    return random.choices(words, weights=weights, k=1)[0]  # Use `random.choices()`
+    total = sum(histogram.values())
+    rand_val = random.uniform(0, total)
+    cumulative = 0
+    for word, count in histogram.items():
+        cumulative += count
+        if rand_val <= cumulative:
+            return word
 
 def unique_words(histogram):
     """Returns the number of unique words in the histogram"""
