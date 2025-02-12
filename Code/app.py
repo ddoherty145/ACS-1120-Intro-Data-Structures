@@ -6,7 +6,7 @@ from histogram import histogram, random_words_weighted
 app = Flask(__name__)
 
 
-word_histogram = histogram(".Code/data/corpus.txt")
+word_histogram = histogram("data/corpus.txt")
 # TODO: Initialize your histogram, hash table, or markov chain here.
 # Any code placed here will run only once, when the server starts.
 
