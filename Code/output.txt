@@ -1,0 +1,1239 @@
+from flask import Flask
+from dictogram import Dictogram
+import random
+
+app = Flask(__name__)
+
+# Initialize histogram once
+word_list = ["one", "fish", "two", "fish", "red", "fish", "blue", "fish"]
+word_histogram = Dictogram(word_list)
+
+@app.route("/")
+def home():
+    """Return a randomly selected word based on frequency."""
+    total = word_histogram.tokens
+    rand_val = random.uniform(0, total)
+    cumulative = 0
+
+    for word, count in word_histogram.items():
+        cumulative += count
+        if rand_val <= cumulative:
+            return f"<p>Random Word: {word}</p>"
+
+if __name__ == "__main__":
+    app.run(debug=True)
+import random
+import sys
+import subprocess
+
+def read_words_file(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            words = file.read().splitlines()
+        return words
+    except FileNotFoundError:
+        print(f"Error: The file '{file_path}' was not found.")
+        sys.exit(1)
+
+def count_words_in_file(file_path):
+    try:
+        result = subprocess.run(['wc', '-l', file_path], stdout=subprocess.PIPE, text=True)
+        return int(result.stdout.split()[0])
+    except Exception as e:
+        print(f"Error counting words in file: {e}")
+        sys.exit(1)
+
+def generate_sentence(words, num_words):
+    if num_words > len(words):
+        print("Error: Requested number of words exceeds the number of available words.")
+        sys.exit(1)
+    return " ".join(random.sample(words, num_words))
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python3 dictionary_words.py <number_of_words>")
+        sys.exit(1)
+    
+    try:
+        num_words = int(sys.argv[1])
+    except ValueError:
+        print("Error: The number of words must be an integer.")
+        sys.exit(1)
+
+    # Path to the words file
+    words_file = '/usr/share/dict/words'
+
+    # Count words in the file (optional, for debugging or validation)
+    word_count = count_words_in_file(words_file)
+    print(f"The word file contains {word_count} words.")
+
+    # Read words from the file
+    words = read_words_file(words_file)
+
+    # Generate and print the sentence
+    sentence = generate_sentence(words, num_words)
+    print(f"Generated Sentence: {sentence}")
+
+if __name__ == "__main__":
+    main()
+#!python
+
+from __future__ import division, print_function  # Python 2 and 3 compatibility
+import random
+
+
+class Dictogram(dict):
+    """Dictogram is a histogram implemented as a subclass of the dict type."""
+
+    def __init__(self, word_list=None):
+        """Initialize this histogram as a new dict and count given words."""
+        super(Dictogram, self).__init__()
+        self.types = 0
+        self.tokens = 0
+        if word_list is not None:
+            for word in word_list:
+                self.add_count(word)
+
+    def add_count(self, word, count=1):
+        """Increase frequency count of given word by given count amount."""
+        if word in self:
+            self[word] += count
+        else:
+            self[word] = count
+            self.types += 1
+        self.tokens += count
+
+    def frequency(self, word):
+        """Return frequency count of given word, or 0 if word is not found."""
+        return self.get(word, 0)
+
+    def sample(self):
+        """Return a word from this histogram, randomly sampled by weighting
+        each word's probability of being chosen by its observed frequency."""
+        words = list(self.keys())
+        weights = list(self.values())
+        return random.choices(words, weights=weights, k=1)[0] # weighted Choice
+
+
+def print_histogram(word_list):
+    print()
+    print('Histogram:')
+    print('word list: {}'.format(word_list))
+    # Create a dictogram and display its contents
+    histogram = Dictogram(word_list)
+    print('dictogram: {}'.format(histogram))
+    print('{} tokens, {} types'.format(histogram.tokens, histogram.types))
+    for word in word_list[-2:]:
+        freq = histogram.frequency(word)
+        print('{!r} occurs {} times'.format(word, freq))
+    print()
+    print_histogram_samples(histogram)
+
+
+def print_histogram_samples(histogram):
+    print('Histogram samples:')
+    # Sample the histogram 10,000 times and count frequency of results
+    samples_list = [histogram.sample() for _ in range(10000)]
+    samples_hist = Dictogram(samples_list)
+    print('samples: {}'.format(samples_hist))
+    print()
+    print('Sampled frequency and error from observed frequency:')
+    header = '| word type | observed freq | sampled freq  |  error  |'
+    divider = '-' * len(header)
+    print(divider)
+    print(header)
+    print(divider)
+    # Colors for error
+    green = '\033[32m'
+    yellow = '\033[33m'
+    red = '\033[31m'
+    reset = '\033[m'
+    # Check each word in original histogram
+    for word, count in histogram.items():
+        # Calculate word's observed frequency
+        observed_freq = count / histogram.tokens
+        # Calculate word's sampled frequency
+        samples = samples_hist.frequency(word)
+        sampled_freq = samples / samples_hist.tokens
+        # Calculate error between word's sampled and observed frequency
+        error = (sampled_freq - observed_freq) / observed_freq
+        color = green if abs(error) < 0.05 else yellow if abs(error) < 0.1 else red
+        print('| {!r:<9} '.format(word)
+            + '| {:>4} = {:>6.2%} '.format(count, observed_freq)
+            + '| {:>4} = {:>6.2%} '.format(samples, sampled_freq)
+            + '| {}{:>+7.2%}{} |'.format(color, error, reset))
+    print(divider)
+    print()
+
+
+def main():
+    import sys
+    arguments = sys.argv[1:]  # Exclude script name in first argument
+    if len(arguments) >= 1:
+        # Test histogram on given arguments
+        print_histogram(arguments)
+    else:
+        # Test histogram on letters in a word
+        word = 'abracadabra'
+        print_histogram(list(word))
+        # Test histogram on words in a classic book title
+        fish_text = 'one fish two fish red fish blue fish'
+        print_histogram(fish_text.split())
+        # Test histogram on words in a long repetitive sentence
+        woodchuck_text = ('how much wood would a wood chuck chuck'
+                          ' if a wood chuck could chuck wood')
+        print_histogram(woodchuck_text.split())
+
+
+if __name__ == '__main__':
+    main()
+#!python
+
+from dictogram import Dictogram
+import unittest
+# Python 2 and 3 compatibility: unittest module renamed this assertion method
+if not hasattr(unittest.TestCase, 'assertCountEqual'):
+    unittest.TestCase.assertCountEqual = unittest.TestCase.assertItemsEqual
+
+
+class DictogramTest(unittest.TestCase):
+
+    # Test fixtures: known inputs and their expected results
+    fish_words = ['one', 'fish', 'two', 'fish', 'red', 'fish', 'blue', 'fish']
+    fish_list = [('one', 1), ('fish', 4), ('two', 1), ('red', 1), ('blue', 1)]
+    fish_dict = {'one': 1, 'fish': 4, 'two': 1, 'red': 1, 'blue': 1}
+
+    def test_entries(self):
+        dictogram = Dictogram(self.fish_words)
+        # Verify histogram as dictionary of entries like {word: count}
+        assert len(dictogram) == 5
+        self.assertCountEqual(dictogram, self.fish_dict)  # Ignore item order
+        # Verify histogram as list of entries like [(word, count)]
+        listogram = dictogram.items()
+        assert len(listogram) == 5
+        self.assertCountEqual(listogram, self.fish_list)  # Ignore item order
+
+    def test_contains(self):
+        histogram = Dictogram(self.fish_words)
+        # All of these words should be found
+        for word in self.fish_words:
+            assert word in histogram
+        # None of these words should be found
+        for word in ('fishy', 'food'):
+            assert word not in histogram
+
+    def test_frequency(self):
+        histogram = Dictogram(self.fish_words)
+        # Verify frequency count of all words
+        assert histogram.frequency('one') == 1
+        assert histogram.frequency('two') == 1
+        assert histogram.frequency('red') == 1
+        assert histogram.frequency('blue') == 1
+        assert histogram.frequency('fish') == 4
+        # Verify frequency count of unseen words
+        assert histogram.frequency('food') == 0
+
+    def test_add_count(self):
+        histogram = Dictogram(self.fish_words)
+        # Add more words to update frequency counts
+        histogram.add_count('two', 2)
+        histogram.add_count('blue', 3)
+        histogram.add_count('fish', 4)
+        histogram.add_count('food', 5)
+        # Verify updated frequency count of all words
+        assert histogram.frequency('one') == 1
+        assert histogram.frequency('two') == 3
+        assert histogram.frequency('red') == 1
+        assert histogram.frequency('blue') == 4
+        assert histogram.frequency('fish') == 8
+        assert histogram.frequency('food') == 5
+        # Verify count of distinct word types
+        assert histogram.types == 6
+        # Verify total count of all word tokens
+        assert histogram.tokens == 8 + 14
+
+    def test_tokens(self):
+        histogram = Dictogram(self.fish_words)
+        # Verify total count of all word tokens
+        assert len(self.fish_words) == 8
+        assert histogram.tokens == 8
+        # Adding words again should double total count of all word tokens
+        for word in self.fish_words:
+            histogram.add_count(word)
+        assert histogram.tokens == 8 * 2
+
+    def test_types(self):
+        histogram = Dictogram(self.fish_words)
+        # Verify count of distinct word types
+        assert len(set(self.fish_words)) == 5
+        assert histogram.types == 5
+        # Adding words again should not change count of distinct word types
+        for word in self.fish_words:
+            histogram.add_count(word)
+        assert histogram.types == 5
+
+    def test_sample(self):
+        histogram = Dictogram(self.fish_words)
+        # Create a list of 10,000 word samples from histogram
+        samples_list = [histogram.sample() for _ in range(10000)]
+        # Create a histogram to count frequency of each word
+        samples_hist = Dictogram(samples_list)
+        # Check each word in original histogram
+        for word, count in histogram.items():
+            # Calculate word's observed frequency
+            observed_freq = count / histogram.tokens
+            # Calculate word's sampled frequency
+            samples = samples_hist.frequency(word)
+            sampled_freq = samples / samples_hist.tokens
+            # Verify word's sampled frequency is close to observed frequency
+            lower_bound = observed_freq * 0.9  # 10% below = 90% = 0.9
+            upper_bound = observed_freq * 1.1  # 10% above = 110% = 1.1
+            assert lower_bound <= sampled_freq <= upper_bound
+
+
+if __name__ == '__main__':
+    unittest.main()
+#!python
+
+from linkedlist import LinkedList
+
+
+class HashTable(object):
+
+    def __init__(self, init_size=8):
+        """Initialize this hash table with the given initial size."""
+        # Create a new list (used as fixed-size array) of empty linked lists
+        self.buckets = []
+        for i in range(init_size):
+            self.buckets.append(LinkedList())
+
+    def __str__(self):
+        """Return a formatted string representation of this hash table."""
+        items = []
+        for key, val in self.items():
+            items.append('{!r}: {!r}'.format(key, val))
+        return '{' + ', '.join(items) + '}'
+
+    def __repr__(self):
+        """Return a string representation of this hash table."""
+        return 'HashTable({!r})'.format(self.items())
+
+    def _bucket_index(self, key):
+        """Return the bucket index where the given key would be stored."""
+        # Calculate the given key's hash code and transform into bucket index
+        return hash(key) % len(self.buckets)
+
+    def keys(self):
+        """Return a list of all keys in this hash table.
+        TODO: Running time: O(???) Why and under what conditions?"""
+        # Collect all keys in each bucket
+        all_keys = []
+        for bucket in self.buckets:
+            for key, value in bucket.items():
+                all_keys.append(key)
+        return all_keys
+
+    def values(self):
+        """Return a list of all values in this hash table.
+        TODO: Running time: O(???) Why and under what conditions?"""
+        # TODO: Loop through all buckets
+        # TODO: Collect all values in each bucket
+
+    def items(self):
+        """Return a list of all items (key-value pairs) in this hash table.
+        TODO: Running time: O(???) Why and under what conditions?"""
+        # Collect all pairs of key-value entries in each bucket
+        all_items = []
+        for bucket in self.buckets:
+            all_items.extend(bucket.items())
+        return all_items
+
+    def length(self):
+        """Return the number of key-value entries by traversing its buckets.
+        TODO: Running time: O(???) Why and under what conditions?"""
+        # TODO: Loop through all buckets
+        # TODO: Count number of key-value entries in each bucket
+
+    def contains(self, key):
+        """Return True if this hash table contains the given key, or False.
+        TODO: Running time: O(???) Why and under what conditions?"""
+        # TODO: Find bucket where given key belongs
+        # TODO: Check if key-value entry exists in bucket
+
+    def get(self, key):
+        """Return the value associated with the given key, or raise KeyError.
+        TODO: Running time: O(???) Why and under what conditions?"""
+        # TODO: Find bucket where given key belongs
+        # TODO: Check if key-value entry exists in bucket
+        # TODO: If found, return value associated with given key
+        # TODO: Otherwise, raise error to tell user get failed
+        # Hint: raise KeyError('Key not found: {}'.format(key))
+
+    def set(self, key, value):
+        """Insert or update the given key with its associated value.
+        TODO: Running time: O(???) Why and under what conditions?"""
+        # TODO: Find bucket where given key belongs
+        # TODO: Check if key-value entry exists in bucket
+        # TODO: If found, update value associated with given key
+        # TODO: Otherwise, insert given key-value entry into bucket
+
+    def delete(self, key):
+        """Delete the given key from this hash table, or raise KeyError.
+        TODO: Running time: O(???) Why and under what conditions?"""
+        # TODO: Find bucket where given key belongs
+        # TODO: Check if key-value entry exists in bucket
+        # TODO: If found, delete entry associated with given key
+        # TODO: Otherwise, raise error to tell user delete failed
+        # Hint: raise KeyError('Key not found: {}'.format(key))
+
+def test_hash_table():
+    ht = HashTable()
+    print('hash table: {}'.format(ht))
+
+    print('\nTesting set:')
+    for key, value in [('I', 1), ('V', 5), ('X', 10)]:
+        print('set({!r}, {!r})'.format(key, value))
+        ht.set(key, value)
+        print('hash table: {}'.format(ht))
+
+    print('\nTesting get:')
+    for key in ['I', 'V', 'X']:
+        value = ht.get(key)
+        print('get({!r}): {!r}'.format(key, value))
+
+    print('contains({!r}): {}'.format('X', ht.contains('X')))
+    print('length: {}'.format(ht.length()))
+
+    # Enable this after implementing delete method
+    delete_implemented = False
+    if delete_implemented:
+        print('\nTesting delete:')
+        for key in ['I', 'V', 'X']:
+            print('delete({!r})'.format(key))
+            ht.delete(key)
+            print('hash table: {}'.format(ht))
+
+        print('contains(X): {}'.format(ht.contains('X')))
+        print('length: {}'.format(ht.length()))
+
+
+if __name__ == '__main__':
+    test_hash_table()
+#!python
+
+from hashtable import HashTable
+import unittest
+# Python 2 and 3 compatibility: unittest module renamed this assertion method
+if not hasattr(unittest.TestCase, 'assertCountEqual'):
+    unittest.TestCase.assertCountEqual = unittest.TestCase.assertItemsEqual
+
+
+class HashTableTest(unittest.TestCase):
+
+    def test_init(self):
+        ht = HashTable(4)
+        assert len(ht.buckets) == 4
+        assert ht.length() == 0
+
+    def test_keys(self):
+        ht = HashTable()
+        assert ht.keys() == []
+        ht.set('I', 1)
+        assert ht.keys() == ['I']
+        ht.set('V', 5)
+        self.assertCountEqual(ht.keys(), ['I', 'V'])  # Ignore item order
+        ht.set('X', 10)
+        self.assertCountEqual(ht.keys(), ['I', 'V', 'X'])  # Ignore item order
+
+    def test_values(self):
+        ht = HashTable()
+        assert ht.values() == []
+        ht.set('I', 1)
+        assert ht.values() == [1]
+        ht.set('V', 5)
+        self.assertCountEqual(ht.values(), [1, 5])  # Ignore item order
+        ht.set('X', 10)
+        self.assertCountEqual(ht.values(), [1, 5, 10])  # Ignore item order
+
+    def test_items(self):
+        ht = HashTable()
+        assert ht.items() == []
+        ht.set('I', 1)
+        assert ht.items() == [('I', 1)]
+        ht.set('V', 5)
+        self.assertCountEqual(ht.items(), [('I', 1), ('V', 5)])
+        ht.set('X', 10)
+        self.assertCountEqual(ht.items(), [('I', 1), ('V', 5), ('X', 10)])
+
+    def test_length(self):
+        ht = HashTable()
+        assert ht.length() == 0
+        ht.set('I', 1)
+        assert ht.length() == 1
+        ht.set('V', 5)
+        assert ht.length() == 2
+        ht.set('X', 10)
+        assert ht.length() == 3
+
+    def test_contains(self):
+        ht = HashTable()
+        ht.set('I', 1)
+        ht.set('V', 5)
+        ht.set('X', 10)
+        assert ht.contains('I') is True
+        assert ht.contains('V') is True
+        assert ht.contains('X') is True
+        assert ht.contains('A') is False
+
+    def test_set_and_get(self):
+        ht = HashTable()
+        ht.set('I', 1)
+        ht.set('V', 5)
+        ht.set('X', 10)
+        assert ht.get('I') == 1
+        assert ht.get('V') == 5
+        assert ht.get('X') == 10
+        assert ht.length() == 3
+        with self.assertRaises(KeyError):
+            ht.get('A')  # Key does not exist
+
+    def test_set_twice_and_get(self):
+        ht = HashTable()
+        ht.set('I', 1)
+        ht.set('V', 4)
+        ht.set('X', 9)
+        assert ht.length() == 3
+        ht.set('V', 5)  # Update value
+        ht.set('X', 10)  # Update value
+        assert ht.get('I') == 1
+        assert ht.get('V') == 5
+        assert ht.get('X') == 10
+        assert ht.length() == 3  # Check length is not overcounting
+
+    def test_delete(self):
+        ht = HashTable()
+        ht.set('I', 1)
+        ht.set('V', 5)
+        ht.set('X', 10)
+        assert ht.length() == 3
+        ht.delete('I')
+        ht.delete('X')
+        assert ht.length() == 1
+        with self.assertRaises(KeyError):
+            ht.delete('X')  # Key no longer exists
+        with self.assertRaises(KeyError):
+            ht.delete('A')  # Key does not exist
+
+
+if __name__ == '__main__':
+    unittest.main()
+import sys
+import string
+import random
+from collections import Counter
+
+def histogram(source_text):
+    if isinstance(source_text, str):  # Check if input is a string
+        try:
+            with open(source_text, 'r', encoding='utf-8') as file:
+                text = file.read()
+        except FileNotFoundError:
+            print(f"Error: The file '{source_text}' was not found.")
+            sys.exit(1)
+    else:
+        text = source_text
+
+    text = text.translate(str.maketrans("", "", string.punctuation)).lower()
+    words = text.split()
+    return Counter(words)
+
+def random_word(histogram):
+    """Select a single word at random from the histogram (uniform distribution)"""
+    words = list(histogram.keys())
+    index = random.randint(0, len(words) - 1)
+    return words[index]
+
+def random_words_weighted(histogram):
+    """Select a single word at random, weighted by frequency"""
+    total = sum(histogram.values())
+    rand_val = random.uniform(0, total)
+    cumulative = 0
+    for word, count in histogram.items():
+        cumulative += count
+        if rand_val <= cumulative:
+            return word
+
+def unique_words(histogram):
+    """Returns the number of unique words in the histogram"""
+    return len(histogram)
+
+def frequency(word, histogram):
+    """Returns the frequency of a word in the histogram"""
+    return histogram.get(word.lower(), 0)
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python3 histogram.py <text_file>")
+        sys.exit(1)
+
+    text_file = sys.argv[1]
+    
+    # Generate Histogram
+    word_histogram = histogram(text_file)
+
+    # Get unique word count
+    unique_count = unique_words(word_histogram)
+
+    print(f"Total Unique Words: {unique_count}")
+
+    # Print a random word (uniform)
+    print("Random Word (Uniform):", random_word(word_histogram))
+
+    # Print a random word (weighted)
+    print("Random Word (Weighted by frequency):", random_words_weighted(word_histogram))
+
+if __name__ == "__main__":
+    main()
+#!python
+
+
+class Node(object):
+
+    def __init__(self, data):
+        """Initialize this node with the given data."""
+        self.data = data
+        self.next = None
+
+    def __repr__(self):
+        """Return a string representation of this node."""
+        return f'Node({self.data})'
+
+
+class LinkedList:
+
+    def __init__(self, items=None):
+        """Initialize this linked list and append the given items, if any."""
+        self.head = None  # First node
+        self.tail = None  # Last node
+        # Append given items
+        if items is not None:
+            for item in items:
+                self.append(item)
+
+    def __repr__(self):
+        """Return a string representation of this linked list."""
+        ll_str = ""
+        for item in self.items():
+            ll_str += f'({item}) -> '
+        return ll_str
+
+    def items(self):
+        """Return a list (dynamic array) of all items in this linked list.
+        Best and worst case running time: O(n) for n items in the list (length)
+        because we always need to loop through all n nodes to get each item."""
+        items = []  # O(1) time to create empty list
+        # Start at head node
+        node = self.head  # O(1) time to assign new variable
+        # Loop until node is None, which is one node too far past tail
+        while node is not None:  # Always n iterations because no early return
+            items.append(node.data)  # O(1) time (on average) to append to list
+            # Skip to next node to advance forward in linked list
+            node = node.next  # O(1) time to reassign variable
+        # Now list contains items from all nodes
+        return items  # O(1) time to return list
+
+    def is_empty(self):
+        """Return a boolean indicating whether this linked list is empty."""
+        return self.head is None
+
+    def length(self):
+        """Return the length of this linked list by traversing its nodes.
+        TODO: Running time: O(n) Why and under what conditions?"""
+        # TODO: Loop through all nodes and count one for each
+
+    def append(self, item):
+        """Insert the given item at the tail of this linked list.
+        TODO: Running time: O(???) Why and under what conditions?"""
+        # TODO: Create new node to hold given item
+        # TODO: If self.is_empty() == True set the head and the tail to the new node
+        # TODO: Else append node after tail
+
+    def prepend(self, item):
+        """Insert the given item at the head of this linked list.
+        TODO: Running time: O(???) Why and under what conditions?"""
+        # TODO: Create new node to hold given item
+        # TODO: Prepend node before head, if it exists
+
+    def find(self, matcher):
+        """Return an item from this linked list if it is present.
+        TODO: Best case running time: O(???) Why and under what conditions?
+        TODO: Worst case running time: O(???) Why and under what conditions?"""
+        # TODO: Loop through all nodes to find item, if present return True otherwise False
+
+    def delete(self, item):
+        """Delete the given item from this linked list, or raise ValueError.
+        TODO: Best case running time: O(???) Why and under what conditions?
+        TODO: Worst case running time: O(???) Why and under what conditions?"""
+        # TODO: Loop through all nodes to find one whose data matches given item
+        # TODO: Update previous node to skip around node with matching data
+        # TODO: Otherwise raise error to tell user that delete has failed
+        # Hint: raise ValueError('Item not found: {}'.format(item))
+
+
+def test_linked_list():
+    ll = LinkedList()
+    print('list: {}'.format(ll))
+    print('\nTesting append:')
+    for item in ['A', 'B', 'C']:
+        print('append({!r})'.format(item))
+        ll.append(item)
+        print('list: {}'.format(ll))
+
+    print('head: {}'.format(ll.head))
+    print('tail: {}'.format(ll.tail))
+    print('length: {}'.format(ll.length()))
+
+    # Enable this after implementing delete method
+    delete_implemented = False
+    if delete_implemented:
+        print('\nTesting delete:')
+        for item in ['B', 'C', 'A']:
+            print('delete({!r})'.format(item))
+            ll.delete(item)
+            print('list: {}'.format(ll))
+
+        print('head: {}'.format(ll.head))
+        print('tail: {}'.format(ll.tail))
+        print('length: {}'.format(ll.length()))
+
+
+if __name__ == '__main__':
+    test_linked_list()
+#!python
+
+from linkedlist import LinkedList, Node
+import unittest
+
+
+class NodeTest(unittest.TestCase):
+
+    def test_init(self):
+        data = 'ABC'
+        node = Node(data)
+        # Initializer should add instance properties
+        assert node.data is data
+        assert node.next is None
+
+    def test_linking_nodes(self):
+        node1 = Node('A')
+        node2 = Node('B')
+        node3 = Node('C')
+        # Link nodes together
+        node1.next = node2
+        node2.next = node3
+        # Node links should be transitive
+        assert node1.next is node2  # One link
+        assert node1.next.next is node3  # Two links
+
+
+class LinkedListTest(unittest.TestCase):
+
+    def test_init(self):
+        ll = LinkedList()
+        # Initializer should add instance properties
+        assert ll.head is None  # First node
+        assert ll.tail is None  # Last node
+
+    def test_init_with_list(self):
+        ll = LinkedList(['A', 'B', 'C'])
+        # Initializer should append items in order
+        assert ll.head.data == 'A'  # First item
+        assert ll.tail.data == 'C'  # Last item
+
+    def test_items_after_append(self):
+        ll = LinkedList()
+        assert ll.items() == []
+        # Append should add new item to tail of list
+        ll.append('A')
+        assert ll.items() == ['A']
+        ll.append('B')
+        assert ll.items() == ['A', 'B']
+        ll.append('C')
+        assert ll.items() == ['A', 'B', 'C']
+
+    def test_items_after_prepend(self):
+        ll = LinkedList()
+        assert ll.items() == []
+        # Prepend should add new item to head of list
+        ll.prepend('C')
+        assert ll.items() == ['C']
+        ll.prepend('B')
+        assert ll.items() == ['B', 'C']
+        ll.prepend('A')
+        assert ll.items() == ['A', 'B', 'C']
+
+    def test_length_after_append(self):
+        ll = LinkedList()
+        assert ll.length() == 0
+        # Append should increase length
+        ll.append('A')
+        assert ll.length() == 1
+        ll.append('B')
+        assert ll.length() == 2
+        ll.append('C')
+        assert ll.length() == 3
+
+    def test_length_after_prepend(self):
+        ll = LinkedList()
+        assert ll.length() == 0
+        # Prepend should increase length
+        ll.prepend('C')
+        assert ll.length() == 1
+        ll.prepend('B')
+        assert ll.length() == 2
+        ll.prepend('A')
+        assert ll.length() == 3
+
+    def test_length_after_append_and_prepend(self):
+        ll = LinkedList()
+        assert ll.length() == 0
+        # Append and prepend should increase length
+        ll.append('C')
+        assert ll.length() == 1
+        ll.prepend('B')
+        assert ll.length() == 2
+        ll.append('D')
+        assert ll.length() == 3
+        ll.prepend('A')
+        assert ll.length() == 4
+
+    def test_length_after_delete(self):
+        ll = LinkedList(['A', 'B', 'C', 'D', 'E'])
+        assert ll.length() == 5
+        # Delete should decrease length
+        ll.delete('A')
+        assert ll.length() == 4
+        ll.delete('E')
+        assert ll.length() == 3
+        ll.delete('C')
+        assert ll.length() == 2
+        ll.delete('D')
+        assert ll.length() == 1
+        ll.delete('B')
+        assert ll.length() == 0
+
+    def test_append(self):
+        ll = LinkedList()
+        # Append should always update tail node
+        ll.append('A')
+        assert ll.head.data == 'A'  # New head
+        assert ll.tail.data == 'A'  # New tail
+        ll.append('B')
+        assert ll.head.data == 'A'  # Unchanged
+        assert ll.tail.data == 'B'  # New tail
+        ll.append('C')
+        assert ll.head.data == 'A'  # Unchanged
+        assert ll.tail.data == 'C'  # New tail
+
+    def test_prepend(self):
+        ll = LinkedList()
+        # Prepend should always update head node
+        ll.prepend('C')
+        assert ll.head.data == 'C'  # New head
+        assert ll.tail.data == 'C'  # New head
+        ll.prepend('B')
+        assert ll.head.data == 'B'  # New head
+        assert ll.tail.data == 'C'  # Unchanged
+        ll.prepend('A')
+        assert ll.head.data == 'A'  # New head
+        assert ll.tail.data == 'C'  # Unchanged
+
+    def test_find(self):
+        ll = LinkedList(['A', 'B', 'C'])
+        assert ll.find(lambda item: item == 'B') == 'B'  # Match equality
+        assert ll.find(lambda item: item < 'B') == 'A'  # Match less than
+        assert ll.find(lambda item: item > 'B') == 'C'  # Match greater than
+        assert ll.find(lambda item: item == 'X') is None  # No matching item
+
+    def test_delete_with_3_items(self):
+        ll = LinkedList(['A', 'B', 'C'])
+        assert ll.head.data == 'A'  # First item
+        assert ll.tail.data == 'C'  # Last item
+        ll.delete('A')
+        assert ll.head.data == 'B'  # New head
+        assert ll.tail.data == 'C'  # Unchanged
+        ll.delete('C')
+        assert ll.head.data == 'B'  # Unchanged
+        assert ll.tail.data == 'B'  # New tail
+        ll.delete('B')
+        assert ll.head is None  # No head
+        assert ll.tail is None  # No tail
+        # Delete should raise error if item was already deleted
+        with self.assertRaises(ValueError):
+            ll.delete('A')  # Item no longer in list
+        with self.assertRaises(ValueError):
+            ll.delete('B')  # Item no longer in list
+        with self.assertRaises(ValueError):
+            ll.delete('C')  # Item no longer in list
+
+    def test_delete_with_5_items(self):
+        ll = LinkedList(['A', 'B', 'C', 'D', 'E'])
+        assert ll.head.data == 'A'  # First item
+        assert ll.tail.data == 'E'  # Last item
+        ll.delete('A')
+        assert ll.head.data == 'B'  # New head
+        assert ll.tail.data == 'E'  # Unchanged
+        ll.delete('E')
+        assert ll.head.data == 'B'  # Unchanged
+        assert ll.tail.data == 'D'  # New tail
+        ll.delete('C')
+        assert ll.head.data == 'B'  # Unchanged
+        assert ll.tail.data == 'D'  # Unchanged
+        ll.delete('D')
+        assert ll.head.data == 'B'  # Unchanged
+        assert ll.tail.data == 'B'  # New tail
+        ll.delete('B')
+        assert ll.head is None  # No head
+        assert ll.tail is None  # No tail
+
+    def test_delete_with_item_not_in_list(self):
+        ll = LinkedList(['A', 'B', 'C'])
+        # Delete should raise error if item not found
+        with self.assertRaises(ValueError):
+            ll.delete('X')  # Item not found in list
+
+    def test_replace_with_item(self):
+        ll = LinkedList(['A', 'B', 'C'])
+        # for item in list
+        ll.replace('A', 'D')
+        assert ll.head.data == 'D'
+        # for item not in list
+        ll.replace('X', 'M')
+        assert ll.head.data == 'D'
+
+
+if __name__ == '__main__':
+    unittest.main()
+#!python
+
+from __future__ import division, print_function  # Python 2 and 3 compatibility
+import random
+
+
+class Listogram(list):
+    """Listogram is a histogram implemented as a subclass of the list type."""
+
+    def __init__(self, word_list=None):
+        """Initialize this histogram as a new list and count given words."""
+        super(Listogram, self).__init__()  # Initialize this as a new list
+        # Add properties to track useful word counts for this histogram
+        self.types = 0  # Count of distinct word types in this histogram
+        self.tokens = 0  # Total count of all word tokens in this histogram
+        # Count words in given list, if any
+        if word_list is not None:
+            for word in word_list:
+                self.add_count(word)
+
+    def add_count(self, word, count=1):
+        """Increase frequency count of given word by given count amount."""
+        for i, (entry_word, entry_word_count) in enumerate(self):
+            if entry_word == word:
+                self[i] = (entry_word, entry_word_count + count)
+                self.tokens += count
+                return
+        # Word not found in list, add new word to list
+        self.append((word, count))
+        self.types += 1
+        self.tokens += count
+
+    def frequency(self, word):
+        """Return frequency count of given word, or 0 if word is not found."""
+        index = self.index_of(word)
+        return self[index][1] if index is not None else 0
+
+    def __contains__(self, word):
+        """Return boolean indicating if given word is in this histogram."""
+        return self.index_of(word) is not None
+
+    def index_of(self, target):
+        """Return the index of entry containing given target word if found in
+        this histogram, or None if target word is not found."""
+        for index, (word, count) in enumerate(self):
+            if word == target:
+                return index
+        return None
+
+    def sample(self):
+        """Return a word from this histogram, randomly sampled by weighting
+        each word's probability of being chosen by its observed frequency."""
+        words, weights = zip(*self)  # Separate words and weights into lists
+        return random.choices(words, weights=weights, k=1)[0]  # weighted Choice
+
+def print_histogram(word_list):
+    print()
+    print('Histogram:')
+    print('word list: {}'.format(word_list))
+    # Create a listogram and display its contents
+    histogram = Listogram(word_list)
+    print('listogram: {}'.format(histogram))
+    print('{} tokens, {} types'.format(histogram.tokens, histogram.types))
+    for word in word_list[-2:]:
+        freq = histogram.frequency(word)
+        print('{!r} occurs {} times'.format(word, freq))
+    print()
+    print_histogram_samples(histogram)
+
+
+def print_histogram_samples(histogram):
+    print('Histogram samples:')
+    # Sample the histogram 10,000 times and count frequency of results
+    samples_list = [histogram.sample() for _ in range(10000)]
+    samples_hist = Listogram(samples_list)
+    print('samples: {}'.format(samples_hist))
+    print()
+    print('Sampled frequency and error from observed frequency:')
+    header = '| word type | observed freq | sampled freq  |  error  |'
+    divider = '-' * len(header)
+    print(divider)
+    print(header)
+    print(divider)
+    # Colors for error
+    green = '\033[32m'
+    yellow = '\033[33m'
+    red = '\033[31m'
+    reset = '\033[m'
+    # Check each word in original histogram
+    for word, count in histogram:
+        # Calculate word's observed frequency
+        observed_freq = count / histogram.tokens
+        # Calculate word's sampled frequency
+        samples = samples_hist.frequency(word)
+        sampled_freq = samples / samples_hist.tokens
+        # Calculate error between word's sampled and observed frequency
+        error = (sampled_freq - observed_freq) / observed_freq
+        color = green if abs(error) < 0.05 else yellow if abs(error) < 0.1 else red
+        print('| {!r:<9} '.format(word)
+            + '| {:>4} = {:>6.2%} '.format(count, observed_freq)
+            + '| {:>4} = {:>6.2%} '.format(samples, sampled_freq)
+            + '| {}{:>+7.2%}{} |'.format(color, error, reset))
+    print(divider)
+    print()
+
+
+def main():
+    import sys
+    arguments = sys.argv[1:]  # Exclude script name in first argument
+    if len(arguments) >= 1:
+        # Test histogram on given arguments
+        print_histogram(arguments)
+    else:
+        # Test histogram on letters in a word
+        word = 'abracadabra'
+        print_histogram(list(word))
+        # Test histogram on words in a classic book title
+        fish_text = 'one fish two fish red fish blue fish'
+        print_histogram(fish_text.split())
+        # Test histogram on words in a long repetitive sentence
+        woodchuck_text = ('how much wood would a wood chuck chuck'
+                          ' if a wood chuck could chuck wood')
+        print_histogram(woodchuck_text.split())
+
+
+if __name__ == '__main__':
+    main()
+#!python
+
+from listogram import Listogram
+import unittest
+# Python 2 and 3 compatibility: unittest module renamed this assertion method
+if not hasattr(unittest.TestCase, 'assertCountEqual'):
+    unittest.TestCase.assertCountEqual = unittest.TestCase.assertItemsEqual
+
+
+class ListogramTest(unittest.TestCase):
+
+    # Test fixtures: known inputs and their expected results
+    fish_words = ['one', 'fish', 'two', 'fish', 'red', 'fish', 'blue', 'fish']
+    fish_list = [('one', 1), ('fish', 4), ('two', 1), ('red', 1), ('blue', 1)]
+    fish_dict = {'one': 1, 'fish': 4, 'two': 1, 'red': 1, 'blue': 1}
+
+    def test_entries(self):
+        # NOTE: This test assumes Listogram is implemented as a list of tuples,
+        # but if you implement it as a list of lists (or a list of count-lists)
+        # you should modify the fish_list fixture above and/or this test (only)
+        listogram = Listogram(self.fish_words)
+        # Verify histogram as list of entries like [(word, count)]
+        assert len(listogram) == 5
+        self.assertCountEqual(listogram, self.fish_list)  # Ignore item order
+        # Verify histogram as dictionary of entries like {word: count}
+        dictogram = dict(listogram)
+        assert len(dictogram) == 5
+        self.assertCountEqual(dictogram, self.fish_dict)  # Ignore item order
+
+    def test_contains(self):
+        histogram = Listogram(self.fish_words)
+        # All of these words should be found
+        for word in self.fish_words:
+            assert word in histogram
+        # None of these words should be found
+        for word in ('fishy', 'food'):
+            assert word not in histogram
+
+    def test_frequency(self):
+        histogram = Listogram(self.fish_words)
+        # Verify frequency count of all words
+        assert histogram.frequency('one') == 1
+        assert histogram.frequency('two') == 1
+        assert histogram.frequency('red') == 1
+        assert histogram.frequency('blue') == 1
+        assert histogram.frequency('fish') == 4
+        # Verify frequency count of unseen words
+        assert histogram.frequency('food') == 0
+
+    def test_add_count(self):
+        histogram = Listogram(self.fish_words)
+        # Add more words to update frequency counts
+        histogram.add_count('two', 2)
+        histogram.add_count('blue', 3)
+        histogram.add_count('fish', 4)
+        histogram.add_count('food', 5)
+        # Verify updated frequency count of all words
+        assert histogram.frequency('one') == 1
+        assert histogram.frequency('two') == 3
+        assert histogram.frequency('red') == 1
+        assert histogram.frequency('blue') == 4
+        assert histogram.frequency('fish') == 8
+        assert histogram.frequency('food') == 5
+        # Verify count of distinct word types
+        assert histogram.types == 6
+        # Verify total count of all word tokens
+        assert histogram.tokens == 8 + 14
+
+    def test_tokens(self):
+        histogram = Listogram(self.fish_words)
+        # Verify total count of all word tokens
+        assert len(self.fish_words) == 8
+        assert histogram.tokens == 8
+        # Adding words again should double total count of all word tokens
+        for word in self.fish_words:
+            histogram.add_count(word)
+        assert histogram.tokens == 8 * 2
+
+    def test_types(self):
+        histogram = Listogram(self.fish_words)
+        # Verify count of distinct word types
+        assert len(set(self.fish_words)) == 5
+        assert histogram.types == 5
+        # Adding words again should not change count of distinct word types
+        for word in self.fish_words:
+            histogram.add_count(word)
+        assert histogram.types == 5
+
+    def test_sample(self):
+        histogram = Listogram(self.fish_words)
+        # Create a list of 10,000 word samples from histogram
+        samples_list = [histogram.sample() for _ in range(10000)]
+        # Create a histogram to count frequency of each word
+        samples_hist = Listogram(samples_list)
+        # Check each word in original histogram
+        for word, count in histogram:
+            # Calculate word's observed frequency
+            observed_freq = count / histogram.tokens
+            # Calculate word's sampled frequency
+            samples = samples_hist.frequency(word)
+            sampled_freq = samples / samples_hist.tokens
+            # Verify word's sampled frequency is close to observed frequency
+            lower_bound = observed_freq * 0.9  # 10% below = 90% = 0.9
+            upper_bound = observed_freq * 1.1  # 10% above = 110% = 1.1
+            assert lower_bound <= sampled_freq <= upper_bound
+
+
+if __name__ == '__main__':
+    unittest.main()
+{
+  "name": "Code",
+  "lockfileVersion": 3,
+  "requires": true,
+  "packages": {}
+}
+import random
+
+quotes = ("It's just a flesh wound.",
+          "He's not the Messiah. He's a very naughty boy!.",
+          "THIS IS AN EX-PARROT!!")
+
+def random_python_quotes():
+    rand_index = random.randint(0, len(quotes) - 1)
+    return quotes[rand_index]
+
+if __name__ == '__main__':
+    quote = random_python_quotes()
+    print(quote)import random
+import sys
+
+def rearrange_words(words):
+    random.shuffle(words)
+    return words
+
+def main():
+    if len(sys.argv) < 2:
+        print("Use: python rearrange.py word1 word2 word3 ...")
+        sys.exit(1)
+
+    words = sys.argv[1:]
+    rearranged = rearrange_words(words)
+
+    print(" ".join(rearranged))
+
+if __name__ == "__main__":
+    main()backports.tarfile==1.2.0
+blinker==1.9.0
+build==1.2.2.post1
+CacheControl==0.14.2
+certifi==2021.10.8
+cffi==1.17.1
+charset-normalizer==2.0.12
+cleo==2.1.0
+click==8.0.3
+crashtest==0.4.1
+distlib==0.3.9
+dulwich==0.22.7
+fastjsonschema==2.21.1
+filelock==3.17.0
+Flask==2.0.2
+gunicorn==20.1.0
+idna==3.3
+importlib_metadata==8.6.1
+installer==0.7.0
+itsdangerous==2.0.1
+jaraco.classes==3.4.0
+jaraco.context==6.0.1
+jaraco.functools==4.1.0
+Jinja2==3.0.3
+keyring==25.6.0
+MarkupSafe==2.0.1
+more-itertools==10.6.0
+msgpack==1.1.0
+oauthlib==3.2.0
+packaging==24.2
+pkginfo==1.12.0
+platformdirs==4.3.6
+poetry==2.0.1
+poetry-core==2.0.1
+pycparser==2.22
+pyproject_hooks==1.2.0
+python-dotenv==0.19.2
+RapidFuzz==3.12.1
+requests==2.27.1
+requests-oauthlib==1.3.1
+requests-toolbelt==1.0.0
+shellingham==1.5.4
+tomli==2.2.1
+tomlkit==0.13.2
+trove-classifiers==2025.1.15.22
+urllib3==1.26.8
+virtualenv==20.29.2
+Werkzeug==2.0.2
+xattr==1.1.4
+zipp==3.21.0
+3.11.11
