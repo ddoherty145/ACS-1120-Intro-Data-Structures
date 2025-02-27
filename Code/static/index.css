@@ -1,40 +1,62 @@
 body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    background-color: #f4f4f4;
-    margin: 0;
-    padding: 0;
-  }
-  
-  h1 {
-    color: #333;
-    margin-top: 50px;
-  }
-  
-  p {
-    color: #666;
-  }
-  
-  button {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 5px;
-  }
-  
-  button:hover {
-    background-color: #0056b3;
-  }
-  
-  blockquote {
-    margin: 20px auto;
-    padding: 20px;
-    background-color: white;
-    border-left: 5px solid #007bff;
-    width: 60%;
-    font-style: italic;
-    color: #333;
-  }
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+  transition: background-image 0.5s ease-in-out; /* Smooth transition */
+}
+
+h1 {
+  color: #fff;
+  margin-top: 0;
+}
+
+p {
+  color: #ddd;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+  margin: 5px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+blockquote {
+  margin: 20px auto;
+  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-left: 5px solid #007bff;
+  width: 60%;
+  font-style: italic;
+  color: #333;
+  text-shadow: none;
+}
+
+#result {
+  font-weight: bold;
+  color: #ffdd57;
+}
+
+#score {
+  font-weight: bold;
+  color: #4caf50;
+}

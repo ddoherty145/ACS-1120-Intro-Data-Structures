@@ -13,11 +13,73 @@
   <button id="generate">Generate</button>
   <blockquote id="sentence">{{ sentence }}</blockquote>
 
+  <p>Guess the source of the sentence:</p>
+  <button id="guess-corpus">The Wheel of Time</button>
+  <button id="guess-sample">Sherlock Holmes</button>
+
+  <p id="result"></p>
+  <p>Score: <span id="score">{{ score }}</span></p>
+  <button id="reset">Reset Score</button>
+
   <script>
+    // List of background images
+  const backgrounds = [
+    "{{ url_for('static', filename='sherlock1.jpg') }}",
+    "{{ url_for('static', filename='sherlock2.jpg') }}",
+    "{{ url_for('static', filename='sherlock3.webp') }}",
+    "{{ url_for('static', filename='WoT1.jpg') }}",
+    "{{ url_for('static', filename='WoT2.webp') }}",
+    "{{ url_for('static', filename='WoT3.jpg') }}",
+  ];
+
+    // Function to change the background image
+    function changeBackground() {
+      const randomBackground = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+      document.body.style.backgroundImage = `url(${randomBackground})`;
+    }
+
+    // Change background when the page loads
+    changeBackground();
+
     document.getElementById("generate").addEventListener("click", async () => {
       const response = await fetch("/generate");
       const data = await response.json();
       document.getElementById("sentence").textContent = data.sentence;
+      changeBackground(); // Change background when generating a new sentence
+    });
+
+    document.getElementById("guess-corpus").addEventListener("click", async () => {
+      const response = await fetch("/guess", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ guess: "corpus" }),
+      });
+      const data = await response.json();
+      document.getElementById("result").textContent = data.result;
+      document.getElementById("score").textContent = data.score;
+    });
+
+    document.getElementById("guess-sample").addEventListener("click", async () => {
+      const response = await fetch("/guess", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ guess: "sample" }),
+      });
+      const data = await response.json();
+      document.getElementById("result").textContent = data.result;
+      document.getElementById("score").textContent = data.score;
+    });
+
+    document.getElementById("reset").addEventListener("click", async () => {
+      const response = await fetch("/reset", {
+        method: "POST",
+      });
+      const data = await response.json();
+      document.getElementById("score").textContent = data.score;
     });
   </script>
 </body>
