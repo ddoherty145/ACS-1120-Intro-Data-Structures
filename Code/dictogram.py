@@ -2,6 +2,8 @@
 
 from __future__ import division, print_function  # Python 2 and 3 compatibility
 import random
+import itertools
+import bisect
 
 
 class Dictogram(dict):
@@ -30,12 +32,12 @@ class Dictogram(dict):
         return self.get(word, 0)
 
     def sample(self):
-        """Return a word from this histogram, randomly sampled by weighting
-        each word's probability of being chosen by its observed frequency."""
-        words = list(self.keys())
-        weights = list(self.values())
-        return random.choices(words, weights=weights, k=1)[0] # weighted Choice
-
+        """Return a word randomly sampled by frequency using O(log n) search."""
+        words, weights = zip(*self.items())  # Extract words and weights
+        cumulative_weights = list(itertools.accumulate(weights))  # Compute cumulative sums
+        rand_val = random.uniform(0, cumulative_weights[-1])  # Pick a random number
+        index = bisect.bisect(cumulative_weights, rand_val)  # Binary search for index
+        return words[index]  # Return the word at the found index
 
 def print_histogram(word_list):
     print()
