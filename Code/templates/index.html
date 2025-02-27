@@ -4,9 +4,21 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
   <title>Tweet Generator</title>
 </head>
 <body>
-    <blockquote>TODO: Replace this text with the sentence you generated!</blockquote>
+  <h1>Tweet Generator</h1>
+  <p>Generate a random tweet by clicking the button below!</p>
+  <button id="generate">Generate</button>
+  <blockquote id="sentence">{{ sentence }}</blockquote>
+
+  <script>
+    document.getElementById("generate").addEventListener("click", async () => {
+      const response = await fetch("/generate");
+      const data = await response.json();
+      document.getElementById("sentence").textContent = data.sentence;
+    });
+  </script>
 </body>
 </html>
