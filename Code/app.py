@@ -6,10 +6,10 @@ app = Flask(__name__)
 app.secret_key = "your_secret_key_here"  # Required for session management
 
 # Load the text files as corpora
-with open("Code/data/corpus.txt", "r", encoding="utf-8") as file:
+with open("data/corpus.txt", "r", encoding="utf-8") as file:
     corpus = file.read()
 
-with open("Code/data/sample.txt", "r", encoding="utf-8") as file:
+with open("data/sample.txt", "r", encoding="utf-8") as file:
     sample = file.read()
 
 # Initialize Markov Chains for both corpora
