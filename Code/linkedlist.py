@@ -129,6 +129,17 @@ class LinkedList:
             node = node.next
 
         raise ValueError('Item not found: {}'.format(item))
+    
+    def replace(self, old_item, new_item):
+        """Replace the given old_item with new_item in this linked list.
+        If old_item is not found, do nothing."""
+        node = self.head
+        
+        while node:
+            if node.data == old_item:
+                node.data = new_item
+                return
+            node = node.next
 
 
 def test_linked_list():
